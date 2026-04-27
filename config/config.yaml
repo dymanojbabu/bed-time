@@ -1,0 +1,169 @@
+story:
+  age_range: "6-7"
+  max_words: 350
+
+# Themes rotate randomly each day
+themes:
+  - saving money and piggy banks
+  - sharing with friends
+  - being honest even when it is hard
+  - finishing what you start
+  - keeping your room tidy
+  - trying new foods
+  - being kind to animals
+  - helping at home
+  - taking turns and being patient
+  - brushing teeth and healthy habits
+  - counting coins and making change
+  - spending wisely vs. impulse buying
+  - earning money by doing chores
+  - giving to others who need help
+  - setting a goal and working toward it
+  - teamwork makes things easier
+  - apologizing and making things right
+  - taking care of books and toys
+  - being brave when scared
+  - gratitude and saying thank you
+
+# Sight words by grade — naturally woven into each story
+sight_words:
+  grade_1:
+    - the
+    - and
+    - a
+    - to
+    - said
+    - in
+    - he
+    - she
+    - was
+    - that
+    - for
+    - are
+    - with
+    - they
+    - have
+    - from
+    - his
+    - her
+    - one
+    - had
+    - by
+    - not
+    - but
+    - what
+    - all
+    - were
+    - we
+    - when
+    - your
+    - can
+    - each
+    - which
+    - do
+    - how
+    - their
+    - if
+    - will
+    - up
+    - about
+    - out
+    - many
+    - then
+    - them
+    - these
+    - so
+    - some
+    - her
+    - would
+    - make
+    - like
+    - him
+    - into
+    - time
+    - has
+    - look
+    - two
+    - more
+    - write
+    - go
+    - see
+    - number
+    - "no"
+    - way
+    - could
+    - people
+    - my
+    - than
+    - first
+    - been
+    - call
+    - who
+    - its
+    - now
+    - find
+    - long
+    - down
+    - day
+    - did
+    - get
+    - come
+    - made
+    - may
+    - part
+  grade_2:
+    - always
+    - around
+    - because
+    - before
+    - best
+    - both
+    - buy
+    - cold
+    - does
+    - fast
+    - found
+    - gave
+    - goes
+    - keep
+    - kind
+    - know
+    - laugh
+    - light
+    - "off"
+    - once
+    - open
+    - our
+    - own
+    - put
+    - read
+    - right
+    - sing
+    - sit
+    - sleep
+    - small
+    - start
+    - tell
+    - those
+    - together
+    - try
+    - us
+    - use
+    - very
+    - walk
+    - warm
+    - wash
+    - wish
+    - work
+    - yellow
+
+model:
+  # gemini-1.5-flash is free: 1,500 requests/day, 1M tokens/min
+  # Change to gemini-1.5-pro for richer (but slower) stories
+  id: "gemini-flash-latest"
+
+scheduler:
+  # 24-hour format — story generates at this time every day
+  time: "20:00"
+  # Set to true to also generate a story immediately when the scheduler starts
+  run_on_start: false

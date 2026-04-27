@@ -1,0 +1,6 @@
+.env
+## stories/
+logs/
+__pycache__/
+*.pyc
+.venv/
