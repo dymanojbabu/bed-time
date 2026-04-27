@@ -9,6 +9,8 @@ from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 
+from github_pr import create_github_pr
+
 ROOT = Path(__file__).parent.parent
 load_dotenv(ROOT / ".env")
 
@@ -121,6 +123,8 @@ def run(force: bool = False) -> None:
     print(f"Saved  : {filepath}")
     print(f"Title  : {title}")
     print(f"Theme  : {theme}")
+
+    create_github_pr(title, theme, filepath)
 
 
 if __name__ == "__main__":

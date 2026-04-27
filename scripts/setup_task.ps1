@@ -2,7 +2,7 @@ $taskName = "BedtimeStoryGenerator"
 $batFile  = Join-Path $PSScriptRoot "run_story.bat"
 
 $action   = New-ScheduledTaskAction -Execute $batFile
-$trigger  = New-ScheduledTaskTrigger -Daily -At "20:00"
+$trigger  = New-ScheduledTaskTrigger -Daily -At "20:38"
 $settings = New-ScheduledTaskSettingsSet `
     -StartWhenAvailable `
     -ExecutionTimeLimit (New-TimeSpan -Hours 1) `

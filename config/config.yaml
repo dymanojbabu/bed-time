@@ -167,3 +167,7 @@ scheduler:
   time: "20:00"
   # Set to true to also generate a story immediately when the scheduler starts
   run_on_start: false
+
+github:
+  # Your GitHub repo in "owner/repo" format
+  repo: "dymanojbabu/bed-time"

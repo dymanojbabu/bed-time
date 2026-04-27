@@ -152,6 +152,46 @@ python src\test_gemini.py
 
 ---
 
+## GitHub PR Automation (Optional)
+
+After each story is generated, the script can automatically create a GitHub Pull Request with the new story file.
+
+### Setup
+
+**1. Create a GitHub Personal Access Token**
+1. Go to [github.com/settings/tokens](https://github.com/settings/tokens) → **Generate new token (classic)**
+2. Give it a name (e.g. `bedtime-story-bot`)
+3. Check the **`repo`** scope
+4. Click **Generate token** and copy it
+
+**2. Add the token to your `.env`**
+```
+GITHUB_TOKEN=ghp_your_token_here
+```
+
+**3. Install the new dependency**
+```
+pip install -r requirements.txt
+```
+
+### What happens automatically
+
+Every time a story is generated:
+1. A new branch `story/YYYY-MM-DD` is created
+2. The story file is committed to that branch
+3. The branch is pushed to GitHub
+4. A PR is opened with the story title and theme as the description
+
+### PR output example
+
+```
+[PR] Created: https://github.com/dymanojbabu/bed-time/pull/1
+```
+
+If `GITHUB_TOKEN` is not set, PR creation is skipped silently — story generation still works normally.
+
+---
+
 ## Troubleshooting
 
 **`GEMINI_API_KEY not set`** — Make sure `.env` exists at `C:\Code\bed-time\.env` with your key.
