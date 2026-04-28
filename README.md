@@ -3,8 +3,7 @@
 A free, automated daily bedtime story generator for children aged 6–7.
 Every evening at 8 PM, it uses Google Gemini to write a calming one-page
 story that weaves in sight words and teaches a gentle life lesson.
-
-Stories are saved as Markdown files in the `stories/` folder.
+Each story is saved as a Markdown file and optionally submitted as a GitHub Pull Request automatically.
 
 ---
 
@@ -15,6 +14,7 @@ Stories are saved as Markdown files in the `stories/` folder.
 - **Sight word practice** — Grade 1 & 2 Dolch sight words woven naturally into every story
 - **20 rotating themes** — saving money, honesty, sharing, helping at home, and more
 - **Skip-if-exists** — safe to re-run; won't overwrite today's story unless you pass `--force`
+- **GitHub PR automation** — automatically opens a PR with the new story after each generation
 
 ---
 
@@ -26,7 +26,7 @@ Stories are saved as Markdown files in the `stories/` folder.
 2. Click **Create API key → Create API key in new project**
 3. Copy the key
 
-> Note: Work or school Google accounts may have the free tier blocked. Use a personal Gmail to avoid quota errors.
+> **Important:** Use a personal Gmail (`@gmail.com`), not a work or school account. Work/school Google accounts have the Gemini free tier blocked and will return a `limit: 0` quota error.
 
 ### 2. Add your API key
 
@@ -37,23 +37,27 @@ cd C:\Code\bed-time
 copy config\.env.example .env
 ```
 
-Open `.env` and replace `your_api_key_here` with your real key:
+Open `.env` and fill in your keys:
 
 ```
-GEMINI_API_KEY=AIza...your_key_here...
+GEMINI_API_KEY=AIza...your_gemini_key...
+GITHUB_TOKEN=ghp_...your_github_token...
 ```
 
 **Important `.env` notes:**
-- `.env` must be placed at the **project root** (`C:\Code\bed-time\.env`), not inside `config/`
-- `.env` is listed in `.gitignore` — it will **never be committed to GitHub**, keeping your API key safe
-- `config/.env.example` is a safe template with no real key — it is committed to GitHub so others know what to set up
-- Never paste your real API key into `config/.env.example` or `README.md`
+- `.env` must be at the **project root** (`C:\Code\bed-time\.env`), not inside `config/`
+- `.env` is listed in `.gitignore` — it will **never be committed to GitHub**, keeping your keys safe
+- `config/.env.example` is the safe committed template — it has no real keys
+- Never paste real keys into `config/.env.example` or `README.md`
 
 ### 3. Install Python dependencies
 
 ```
+.venv\Scripts\activate
 pip install -r requirements.txt
 ```
+
+> Always activate the virtual environment first. You should see `(.venv)` at the start of your terminal prompt. Without it, packages installed here won't be found when running the scripts.
 
 ### 4. Test it manually
 
@@ -61,7 +65,13 @@ pip install -r requirements.txt
 python src\generate_story.py
 ```
 
-A story for today is saved in `stories/YYYY-MM-DD.md`. Run with `--force` to regenerate.
+A story for today is saved in `stories/YYYY-MM-DD.md` and a GitHub PR is opened automatically.
+
+Run with `--force` to regenerate even if today's story already exists:
+
+```
+python src\generate_story.py --force
+```
 
 ### 5. Schedule it (runs every day at 8 PM automatically)
 
@@ -72,7 +82,9 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 C:\Code\bed-time\scripts\setup_task.ps1
 ```
 
-That's it. The story generates automatically every evening.
+That's it. The story generates automatically every evening — no terminal needed.
+
+> Your laptop must be **on and not sleeping** at 8 PM. If it's asleep, the task runs the next time it wakes up (the script uses `-StartWhenAvailable`).
 
 ---
 
@@ -81,20 +93,21 @@ That's it. The story generates automatically every evening.
 ```
 bed-time/
 ├── src/
-│   ├── generate_story.py   # Main script — calls Gemini, saves story
+│   ├── generate_story.py   # Main script — calls Gemini, saves story, triggers PR
+│   ├── github_pr.py        # GitHub PR creation — branches, commits, pushes, opens PR
 │   ├── scheduler.py        # Alternative: keep-alive Python scheduler
-│   └── test_gemini.py      # Connection test — lists available models
+│   └── test_gemini.py      # Diagnostic — lists available Gemini models
 ├── config/
-│   ├── config.yaml         # Age range, themes, sight words, model, schedule time
-│   └── .env.example        # Template for .env
+│   ├── config.yaml         # Age range, themes, sight words, model, GitHub repo
+│   └── .env.example        # Template for .env (safe to commit — no real keys)
 ├── scripts/
 │   ├── run_story.bat       # Entry point used by Windows Task Scheduler
 │   └── setup_task.ps1      # Registers the scheduled task (run once, as Admin)
-├── stories/                # Generated stories (YYYY-MM-DD.md) — gitignored
-├── logs/                   # Task Scheduler output log — gitignored
-├── .env                    # Your Gemini API key (never commit this)
-├── .gitignore
-├── requirements.txt
+├── stories/                # Generated stories (YYYY-MM-DD.md)
+├── logs/                   # Task Scheduler output log
+├── .env                    # Your API keys — never commit this
+├── .gitignore              # Excludes .env, logs/, .venv/
+├── requirements.txt        # Python dependencies
 └── README.md
 ```
 
@@ -124,12 +137,13 @@ Once upon a time, in a cozy little house on Maple Street...
 |-----|-------------|
 | `story.age_range` | Target age group (default: `"6-7"`) |
 | `story.max_words` | Target story length in words (default: `350`) |
-| `themes` | List of themes — one is picked randomly each day |
+| `themes` | List of themes — one picked randomly each day |
 | `sight_words` | Grade 1 & 2 Dolch words woven into every story |
-| `model.id` | Gemini model ID (use `models/` prefix, e.g. `gemini-flash-latest`) |
+| `model.id` | Gemini model ID (e.g. `gemini-flash-latest`) |
 | `scheduler.time` | Time for `scheduler.py` alternative (24-hour, e.g. `"20:00"`) |
+| `github.repo` | Your GitHub repo in `owner/repo` format (e.g. `dymanojbabu/bed-time`) |
 
-To see which models are available to your API key:
+To see which Gemini models are available to your API key:
 
 ```
 python src\test_gemini.py
@@ -142,66 +156,107 @@ python src\test_gemini.py
 | Command | What it does |
 |---------|-------------|
 | `python src\generate_story.py` | Generate today's story — **skips if already exists**, Gemini API not called |
-| `python src\generate_story.py --force` | **Overwrites** today's story even if it exists — calls Gemini API every time |
-| `python src\scheduler.py` | Alternative: run a keep-alive Python scheduler |
-| `python src\scheduler.py --now` | Same, but also generate a story immediately |
-| `python src\test_gemini.py` | List all models available to your API key |
+| `python src\generate_story.py --force` | **Overwrites** today's story even if it exists — calls Gemini and creates a new PR |
+| `python src\scheduler.py` | Alternative: keep-alive Python scheduler (runs all day, fires at scheduled time) |
+| `python src\scheduler.py --now` | Same, but also generates a story immediately on startup |
+| `python src\test_gemini.py` | List all Gemini models available to your API key |
+| `python src\github_pr.py` | Create a PR for today's story without regenerating it |
 
-> **Note:** The Windows Task Scheduler always runs without `--force`, so it generates exactly one story per day and never overwrites.
-> Use `--force` only when you want to manually regenerate a story — each call hits the Gemini API and overwrites the existing file.
+> **`--force` warning:** Each call hits the Gemini API and overwrites the existing story file. The Windows Task Scheduler always runs without `--force`, so it safely generates exactly one story per day.
+
+### When to use `github_pr.py` directly
+
+If the story was already generated today but the PR was skipped (e.g. token wasn't set, network error), you can create the PR without touching Gemini:
+
+```
+python src\github_pr.py
+```
+
+It reads today's `stories/YYYY-MM-DD.md`, parses the title and theme, and opens the PR. If no story exists for today it will tell you to generate one first.
 
 ---
 
-## GitHub PR Automation (Optional)
+## GitHub PR Automation
 
-After each story is generated, the script can automatically create a GitHub Pull Request with the new story file.
+After each story is generated, `src/github_pr.py` automatically:
+
+1. Creates a new git branch: `story/YYYY-MM-DD`
+2. Commits the story file to that branch
+3. Pushes the branch to GitHub
+4. Opens a Pull Request with the story title and theme
+
+### PR description example
+
+```
+Theme: saving money and piggy banks
+File: `2026-04-26.md`
+
+New bedtime story generated automatically.
+```
 
 ### Setup
 
 **1. Create a GitHub Personal Access Token**
-1. Go to [github.com/settings/tokens](https://github.com/settings/tokens) → **Generate new token (classic)**
-2. Give it a name (e.g. `bedtime-story-bot`)
-3. Check the **`repo`** scope
-4. Click **Generate token** and copy it
+1. Go to [github.com/settings/tokens](https://github.com/settings/tokens)
+2. Click **Generate new token (classic)**
+3. Name: `bedtime-story-bot`
+4. Scope: check **`repo`** (full repo access)
+5. Click **Generate token** — copy it immediately (shown only once)
 
-**2. Add the token to your `.env`**
+**2. Add the token to `.env`**
 ```
 GITHUB_TOKEN=ghp_your_token_here
 ```
 
-**3. Install the new dependency**
+**3. Push your repo to GitHub first**
+
+PRs can only be created if the repo exists on GitHub with a `main` branch:
 ```
-pip install -r requirements.txt
+git remote add origin https://github.com/dymanojbabu/bed-time.git
+git push -u origin main
 ```
 
-### What happens automatically
-
-Every time a story is generated:
-1. A new branch `story/YYYY-MM-DD` is created
-2. The story file is committed to that branch
-3. The branch is pushed to GitHub
-4. A PR is opened with the story title and theme as the description
-
-### PR output example
-
+**4. Test**
 ```
+python src\generate_story.py --force
+```
+
+Expected output:
+```
+Generating today's bedtime story…
+Saved  : C:\Code\bed-time\stories\2026-04-26.md
+Title  : Leo's Piggy Bank
+Theme  : saving money and piggy banks
 [PR] Created: https://github.com/dymanojbabu/bed-time/pull/1
 ```
 
-If `GITHUB_TOKEN` is not set, PR creation is skipped silently — story generation still works normally.
+If `GITHUB_TOKEN` is missing or empty, PR creation is skipped silently — story generation still works normally.
 
 ---
 
 ## Troubleshooting
 
-**`GEMINI_API_KEY not set`** — Make sure `.env` exists at `C:\Code\bed-time\.env` with your key.
+**`GEMINI_API_KEY not set`**
+Make sure `.env` exists at `C:\Code\bed-time\.env` (not inside `config/`) and contains your key.
 
-**`429 RESOURCE_EXHAUSTED, limit: 0`** — Your Google account's free tier is blocked. Create a new API key at [aistudio.google.com](https://aistudio.google.com/app/apikey) using a personal Gmail and choose "Create API key in new project".
+**`429 RESOURCE_EXHAUSTED, limit: 0`**
+Your Google account's free tier is blocked (usually a work/school account). Create a new key at [aistudio.google.com](https://aistudio.google.com/app/apikey) using a personal Gmail and choose **"Create API key in new project"**.
 
-**`404 NOT_FOUND` for model** — The model name in `config/config.yaml` is wrong. Run `python src\test_gemini.py` to see valid model names. Use the full name including `models/` prefix.
+**`404 NOT_FOUND` for model**
+The model name in `config/config.yaml` is not valid. Run `python src\test_gemini.py` to see valid names for your key.
 
-**Task doesn't run** — Open Task Scheduler, find "BedtimeStoryGenerator", right-click → Run to test. Check `logs\story_log.txt` for errors.
+**`ImportError: cannot import name 'genai'`**
+The venv Python isn't being used. Activate it first:
+```
+.venv\Scripts\activate
+```
+Then run `pip install -r requirements.txt` again.
 
-**Story already exists** — Run `python src\generate_story.py --force` to overwrite.
+**`[PR] Git error`**
+Make sure you've pushed the repo to GitHub (`git push -u origin main`) and that `github.repo` in `config/config.yaml` matches your actual GitHub repo name.
 
-**Packages not found** — Run `pip install -r requirements.txt` again with the venv activated: `.venv\Scripts\activate`.
+**Task doesn't run at 8 PM**
+Open Task Scheduler → find `BedtimeStoryGenerator` → right-click → **Run** to test manually. Check `logs\story_log.txt` for errors.
+
+**Story already exists**
+Run `python src\generate_story.py --force` to overwrite today's story.

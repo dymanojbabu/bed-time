@@ -1,13 +1,18 @@
 import os
 import subprocess
+import sys
 from datetime import date
 from pathlib import Path
 
 import requests
 import yaml
+from dotenv import load_dotenv
 
 ROOT = Path(__file__).parent.parent
 CONFIG_PATH = ROOT / "config" / "config.yaml"
+STORIES_DIR = ROOT / "stories"
+
+load_dotenv(ROOT / ".env")
 
 
 def _load_config() -> dict:
@@ -35,13 +40,25 @@ def create_github_pr(title: str, theme: str, filepath: Path) -> None:
     try:
         subprocess.run(["git", "checkout", "-B", branch], check=True, capture_output=True)
         subprocess.run(["git", "add", str(filepath)], check=True, capture_output=True)
-        subprocess.run(
-            ["git", "commit", "-m", f"story: {title} — {date_str}"],
-            check=True, capture_output=True,
+
+        # Only commit if there is something staged
+        staged = subprocess.run(
+            ["git", "diff", "--cached", "--quiet"],
+            capture_output=True,
         )
+        if staged.returncode != 0:
+            subprocess.run(
+                ["git", "commit", "-m", f"story: {title} — {date_str}"],
+                check=True, capture_output=True,
+            )
+        else:
+            print("[PR] Nothing new to commit — file already committed, continuing to push.")
+
         subprocess.run(["git", "push", "origin", branch, "--force"], check=True, capture_output=True)
     except subprocess.CalledProcessError as e:
-        print(f"[PR] Git error: {e.stderr.decode().strip() if e.stderr else str(e)}")
+        stderr = e.stderr.decode().strip() if e.stderr else ""
+        stdout = e.stdout.decode().strip() if e.stdout else ""
+        print(f"[PR] Git error: {stderr or stdout or str(e)}")
         subprocess.run(["git", "checkout", "main"], capture_output=True)
         return
 
@@ -71,3 +88,21 @@ def create_github_pr(title: str, theme: str, filepath: Path) -> None:
         print(f"[PR] Failed ({response.status_code}): {response.json().get('message', '')}")
 
     subprocess.run(["git", "checkout", "main"], capture_output=True)
+
+
+if __name__ == "__main__":
+    today_file = STORIES_DIR / f"{date.today().isoformat()}.md"
+
+    if not today_file.exists():
+        print(f"No story found for today: {today_file}")
+        print("Run `python src\\generate_story.py` first to generate one.")
+        sys.exit(1)
+
+    lines = today_file.read_text(encoding="utf-8").splitlines()
+    title = next((l.lstrip("# ") for l in lines if l.startswith("# ")), "A Bedtime Story")
+    theme = next((l.replace("**Theme:**", "").strip().rstrip("  ") for l in lines if "**Theme:**" in l), "unknown")
+
+    print(f"Creating PR for: {today_file.name}")
+    print(f"Title : {title}")
+    print(f"Theme : {theme}")
+    create_github_pr(title, theme, today_file)
